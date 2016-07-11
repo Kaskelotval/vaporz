@@ -1,31 +1,29 @@
 // Set up the scene, camera, and renderer as global variables.
-var scene, controls, camera, renderer;
+var scene, controls, camera, renderer, container;
+var clock = new THREE.Clock();
 
 init();
 animate();
 function init(){
 
+
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2( 0x490E61, 0.0002 );
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setClearColor( scene.fog.color );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 15000 );
+    camera.position.z = 300;
 
-    var container = document.getElementById('container');
-    container.appendChild(renderer.domElement);
+    controls = new THREE.FlyControls( camera );    //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
 
-    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.z = 30;
+    controls.movementSpeed = 2500;
+    controls.domElement = container;
+    controls.rollSpeed = Math.PI / 6;
+    controls.autoForward = false;
+    controls.dragToLook = false;
 
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
-    //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.25;
-    controls.enableZoom = false;
-
-    scene.add(camera);
 
 //Hemisphere
     var light = new THREE.HemisphereLight( 0x490E61, 0xFA056F, 0.75 );
@@ -66,9 +64,24 @@ function init(){
     sphere.rotation.y += 2;
     scene.add( sphere );
 
+    renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+    renderer.setClearColor( scene.fog.color );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    container.appendChild( renderer.domElement );
+
+    //events
+
+    window.addEventListener( 'resize', onWindowResize, false );
 }
 
 //rotate it a little
+
+function onWindowResize( event ) {
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+}
 
 function animate() {
     requestAnimationFrame( animate );
@@ -76,7 +89,9 @@ function animate() {
 }
 //render to scene
 function render() {
-    requestAnimationFrame( render );
+    var delta = clock.getDelta();
+
+    controls.update(delta);
     renderer.render( scene, camera );
 
 }
